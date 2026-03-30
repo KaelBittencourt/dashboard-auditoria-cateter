@@ -1,6 +1,6 @@
-# Audit Insights Hub - Portal de Auditoria Hospitalar
+# Cateter Venoso e Sistema de Infusão - Auditoria Interna ( SCIH )
 
-O **Audit Insights Hub** é uma plataforma analítica de alta fidelidade voltada para a gestão de conformidade em protocolos de **Cateter Venoso e Sistemas de Infusão**. Desenvolvido com um design focado em usabilidade clínica, o sistema transforma dados brutos de auditoria em visualizações estratégicas que auxiliam na tomada de decisão e na melhoria contínua dos processos assistenciais.
+O **Cateter Venoso e Sistema de Infusão - Auditoria Interna ( SCIH )** é uma plataforma analítica de alta fidelidade voltada para a gestão de conformidade em protocolos de **Cateter Venoso e Sistemas de Infusão**. Desenvolvido com um design focado em usabilidade clínica, o sistema transforma dados brutos de auditoria em visualizações estratégicas que auxiliam na tomada de decisão e na melhoria contínua dos processos assistenciais.
 
 ![Dashboard Preview](./dashboard_preview.png)
 

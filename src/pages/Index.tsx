@@ -81,8 +81,8 @@ export default function Index() {
               <Activity className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">Auditoria Hospitalar</h1>
-              <p className="text-xs text-muted-foreground">Cateter Venoso e Sistema de Infusão</p>
+              <h1 className="text-lg font-bold text-foreground">Cateter Venoso e Sistema de Infusão</h1>
+              <p className="text-xs text-muted-foreground">Auditoria Interna ( SCIH )</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
