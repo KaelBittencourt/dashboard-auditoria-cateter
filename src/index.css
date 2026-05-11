@@ -119,6 +119,13 @@
   background: var(--gradient-card);
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
+  cursor: default;
+  user-select: none;
+}
+
+/* Prevent text cursor on all non-input elements */
+h1, h2, h3, h4, h5, h6, p, span, div, label, li, td, th, svg {
+  cursor: default;
 }
 
 /* Glow effects */

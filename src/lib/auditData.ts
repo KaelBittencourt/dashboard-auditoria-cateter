@@ -40,6 +40,15 @@ export interface AuditRecord {
   totalEvaluated: number;
   totalConform: number;
   totalNonConform: number;
+  // New fields from additional columns
+  dressingContents1: string;   // "No curativo consta:" (1ª avaliação)
+  dressingContents2: string;   // "No curativo consta:" (2ª avaliação)
+  insertionSite1: string;      // "Sitio da Inserção apresenta" (1ª avaliação)
+  insertionSite2: string;      // "Sitio da Inserção apresenta" (2ª avaliação)
+  catheterCoverage1: string;   // "17. Cobertura de cateter" (1ª avaliação)
+  catheterCoverage2: string;   // "17. Cobertura de cateter" (2ª avaliação)
+  asepsisTechnique1: string;   // "18. Técnica Correta de assepsia" (1ª avaliação)
+  asepsisTechnique2: string;   // "18. Técnica Correta de assepsia" (2ª avaliação)
 }
 
 function parseDate(dateStr: string): Date | null {
@@ -110,6 +119,15 @@ function parseRow(row: Record<string, string>): AuditRecord {
     accessType: row['5. Tipo de acesso'] || '',
     observations1: row['Observações'] || '',
     observations2: row['Observações_1'] || '',
+    // New fields - additional columns
+    dressingContents1: row['No curativo consta:'] || '',
+    dressingContents2: row['No curativo consta:_1'] || '',
+    insertionSite1: row['Sitio da Inserção apresenta'] || '',
+    insertionSite2: row['Sitio da Inserção apresenta_1'] || '',
+    catheterCoverage1: row['17.  Cobertura de cateter'] || '',
+    catheterCoverage2: row['17.  Cobertura de cateter_1'] || '',
+    asepsisTechnique1: row['18. Técnica Correta de assepsia '] || '',
+    asepsisTechnique2: row['18. Técnica Correta de assepsia _1'] || '',
     conformityItems,
     conformRate,
     totalEvaluated,
@@ -191,6 +209,7 @@ function formatMonth(key: string): string {
 export function getConformityBySector(records: AuditRecord[]): { sector: string; rate: number }[] {
   const grouped: Record<string, { total: number; conform: number }> = {};
   for (const r of records) {
+    if (!r.sector || !r.sector.trim()) continue;
     if (!grouped[r.sector]) grouped[r.sector] = { total: 0, conform: 0 };
     grouped[r.sector].total += r.totalEvaluated;
     grouped[r.sector].conform += r.totalConform;
@@ -227,4 +246,201 @@ export function getConformityByAccessType(records: AuditRecord[]): { type: strin
     type,
     rate: data.total > 0 ? (data.conform / data.total) * 100 : 0,
   }));
+}
+
+// =============================================
+// New analytical functions for additional columns
+// =============================================
+
+/** 
+ * Parse multi-value column like "Data, Turno, Assinatura" into individual items 
+ */
+function parseMultiValue(value: string): string[] {
+  if (!value || value.trim() === '') return [];
+  return value.split(',').map(v => v.trim()).filter(v => v.length > 0);
+}
+
+/**
+ * "No curativo consta:" — Breakdown of what items the dressing contains
+ * Returns counts for Data, Turno, Assinatura individually
+ */
+export function getDressingContentsBreakdown(records: AuditRecord[]): { item: string; count: number; percentage: number }[] {
+  const counts: Record<string, number> = {};
+  let totalRecordsWithData = 0;
+
+  for (const r of records) {
+    const values = [r.dressingContents1, r.dressingContents2].filter(v => v.trim());
+    for (const v of values) {
+      totalRecordsWithData++;
+      const items = parseMultiValue(v);
+      for (const item of items) {
+        counts[item] = (counts[item] || 0) + 1;
+      }
+    }
+  }
+
+  return Object.entries(counts)
+    .map(([item, count]) => ({
+      item,
+      count,
+      percentage: totalRecordsWithData > 0 ? (count / totalRecordsWithData) * 100 : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * "No curativo consta:" — Completeness analysis (has all 3: Data, Turno, Assinatura)
+ */
+export function getDressingCompleteness(records: AuditRecord[]): { complete: number; partial: number; empty: number; total: number } {
+  let complete = 0;
+  let partial = 0;
+  let empty = 0;
+
+  // Only consider records that have an access (not "Sem Acesso")
+  const relevantRecords = records.filter(r => r.accessType && r.accessType !== 'Sem Acesso');
+
+  for (const r of relevantRecords) {
+    const allValues = [r.dressingContents1, r.dressingContents2].filter(v => v.trim());
+    if (allValues.length === 0) {
+      empty++;
+      continue;
+    }
+    for (const val of allValues) {
+      const items = parseMultiValue(val);
+      const hasData = items.some(i => i.toLowerCase() === 'data');
+      const hasTurno = items.some(i => i.toLowerCase() === 'turno');
+      const hasAssinatura = items.some(i => i.toLowerCase() === 'assinatura');
+      if (hasData && hasTurno && hasAssinatura) {
+        complete++;
+      } else {
+        partial++;
+      }
+    }
+  }
+
+  return { complete, partial, empty, total: complete + partial + empty };
+}
+
+/**
+ * "Sitio da Inserção apresenta" — Distribution of insertion site conditions
+ */
+export function getInsertionSiteDistribution(records: AuditRecord[]): { condition: string; count: number; percentage: number }[] {
+  const counts: Record<string, number> = {};
+  let total = 0;
+
+  for (const r of records) {
+    const values = [r.insertionSite1, r.insertionSite2].filter(v => v.trim());
+    for (const v of values) {
+      total++;
+      counts[v.trim()] = (counts[v.trim()] || 0) + 1;
+    }
+  }
+
+  return Object.entries(counts)
+    .map(([condition, count]) => ({
+      condition,
+      count,
+      percentage: total > 0 ? (count / total) * 100 : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * "17. Cobertura de cateter" — Distribution of catheter coverage types
+ */
+export function getCatheterCoverageDistribution(records: AuditRecord[]): { type: string; count: number; percentage: number }[] {
+  const counts: Record<string, number> = {};
+  let totalRecordsWithData = 0;
+
+  for (const r of records) {
+    const values = [r.catheterCoverage1, r.catheterCoverage2].filter(v => v.trim());
+    for (const v of values) {
+      totalRecordsWithData++;
+      const items = parseMultiValue(v);
+      for (const item of items) {
+        counts[item] = (counts[item] || 0) + 1;
+      }
+    }
+  }
+
+  return Object.entries(counts)
+    .map(([type, count]) => ({
+      type,
+      count,
+      percentage: totalRecordsWithData > 0 ? (count / totalRecordsWithData) * 100 : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * "18. Técnica Correta de assepsia" — Distribution of asepsis technique evaluations
+ */
+export function getAsepsisTechniqueDistribution(records: AuditRecord[]): { status: string; count: number; percentage: number }[] {
+  const counts: Record<string, number> = {};
+  let total = 0;
+
+  for (const r of records) {
+    const values = [r.asepsisTechnique1, r.asepsisTechnique2].filter(v => v.trim());
+    for (const v of values) {
+      total++;
+      counts[v.trim()] = (counts[v.trim()] || 0) + 1;
+    }
+  }
+
+  return Object.entries(counts)
+    .map(([status, count]) => ({
+      status,
+      count,
+      percentage: total > 0 ? (count / total) * 100 : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * "Responsável pela unidade" — Audits count and conformity per responsible person
+ */
+export function getConformityByResponsible(records: AuditRecord[]): { name: string; audits: number; rate: number; totalEvaluated: number }[] {
+  const grouped: Record<string, { audits: number; total: number; conform: number }> = {};
+  for (const r of records) {
+    const name = r.responsible.trim();
+    if (!name) continue;
+    if (!grouped[name]) grouped[name] = { audits: 0, total: 0, conform: 0 };
+    grouped[name].audits++;
+    grouped[name].total += r.totalEvaluated;
+    grouped[name].conform += r.totalConform;
+  }
+  return Object.entries(grouped)
+    .map(([name, data]) => ({
+      name,
+      audits: data.audits,
+      rate: data.total > 0 ? (data.conform / data.total) * 100 : 0,
+      totalEvaluated: data.total,
+    }))
+    .sort((a, b) => b.audits - a.audits);
+}
+
+/**
+ * Coverage type combined with access type correlation
+ */
+export function getCoverageByAccessType(records: AuditRecord[]): { accessType: string; coverageType: string; count: number }[] {
+  const counts: Record<string, number> = {};
+
+  for (const r of records) {
+    if (!r.accessType || r.accessType === 'Sem Acesso') continue;
+    const coverages = [r.catheterCoverage1, r.catheterCoverage2].filter(v => v.trim());
+    for (const cov of coverages) {
+      const items = parseMultiValue(cov);
+      for (const item of items) {
+        const key = `${r.accessType}|||${item}`;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    }
+  }
+
+  return Object.entries(counts)
+    .map(([key, count]) => {
+      const [accessType, coverageType] = key.split('|||');
+      return { accessType, coverageType, count };
+    })
+    .sort((a, b) => b.count - a.count);
 }

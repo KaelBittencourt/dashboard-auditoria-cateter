@@ -96,7 +96,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
           <div className="flex">
             <div className="relative z-30 flex flex-1 flex-col justify-center gap-1 px-6 py-4 text-left sm:border-l sm:border-white/5 sm:px-8 sm:py-6 bg-primary/5">
               <span className="text-[10px] uppercase font-semibold tracking-tighter text-muted-foreground">
-                Volume Total Geral
+                Volume total
               </span>
               <span className="text-2xl font-bold leading-none sm:text-3xl text-foreground">
                 {totalVolume}
@@ -248,64 +248,54 @@ export default function DashboardCharts({ records }: ChartsProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
-            <BarChart
-              data={rankingData}
-              layout="vertical"
-              margin={{
-                left: -20,
-                right: 45,
-                top: 0,
-                bottom: 0
-              }}
-            >
-              <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <YAxis
-                dataKey="label"
-                type="category"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                tick={{
-                  fill: 'hsl(var(--foreground))',
-                  fontSize: 11,
-                  fontWeight: 500,
-                  opacity: 0.9
-                }}
-                width={180}
-              />
-              <XAxis type="number" hide />
-              <ChartTooltip
-                cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 8 }}
-                content={
-                  <ChartTooltipContent
-                    className="card-glass border-white/10"
-                    formatter={(value) => (
-                      <div className="flex w-full items-center justify-between gap-4">
-                        <span className="text-muted-foreground">Ocorrências</span>
-                        <span className="font-mono font-medium text-foreground">{value}</span>
-                      </div>
-                    )}
-                  />
-                }
-              />
-              <Bar
-                dataKey="count"
-                layout="vertical"
-                fill={SEMANTIC.nonconform}
-                radius={[0, 4, 4, 0]}
-                barSize={16}
-                animationDuration={1000}
-              >
-                <LabelList
-                  dataKey="count"
-                  position="right"
-                  offset={12}
-                  className="fill-muted-foreground font-bold text-[11px]"
-                />
-              </Bar>
-            </BarChart>
-          </ChartContainer>
+          {/* Header */}
+          <div className="flex items-center text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60 pb-2 mb-1 border-b border-white/5">
+            <span className="w-6">#</span>
+            <span className="flex-1">Item</span>
+            <span className="w-20 text-right">Ocorrências</span>
+          </div>
+
+          {/* Rows */}
+          <div className="space-y-0.5">
+            {rankingData.map((item, i) => {
+              const maxCount = rankingData[0]?.count || 1;
+              const pct = (item.count / maxCount) * 100;
+              return (
+                <div
+                  key={item.label}
+                  className="flex items-center py-2.5 px-1 rounded-lg hover:bg-white/[0.03] transition-colors"
+                >
+                  {/* Rank */}
+                  <span className="w-6 text-[11px] font-bold text-muted-foreground/40 tabular-nums">
+                    {i + 1}
+                  </span>
+
+                  {/* Label + inline bar */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-foreground/90 truncate">{item.label}</p>
+                    <div className="h-1 w-full rounded-full bg-white/[0.04] mt-1.5 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${pct}%`,
+                          background: SEMANTIC.nonconform,
+                          opacity: 1 - i * 0.06,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Count */}
+                  <span className="w-20 text-right text-xs font-bold tabular-nums" style={{ color: SEMANTIC.nonconform }}>
+                    {item.count}
+                  </span>
+                </div>
+              );
+            })}
+            {rankingData.length === 0 && (
+              <p className="text-xs text-muted-foreground italic text-center py-8">Nenhuma não conformidade registrada</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 

@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import DashboardFilters, { FilterState } from '@/components/dashboard/DashboardFilters';
 import KPICards from '@/components/dashboard/KPICards';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
-import AutomaticInsights from '@/components/dashboard/AutomaticInsights';
+import DetailedAnalysisCards from '@/components/dashboard/DetailedAnalysisCards';
 import AuditTable from '@/components/dashboard/AuditTable';
 import { Activity, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ const initialFilters: FilterState = {
 export default function Index() {
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [contentVisible, setContentVisible] = useState(true);
 
   const { data: records = [], isLoading, isFetching, refetch, dataUpdatedAt } = useQuery({
     queryKey: ['auditData'],
@@ -31,9 +32,17 @@ export default function Index() {
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
+    // Fade out
+    setContentVisible(false);
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Wait for fade out animation
+    await new Promise(r => setTimeout(r, 400));
     await refetch();
-    // Garante que o movimento seja perceptível mesmo com dados em cache
-    setTimeout(() => setIsRefreshing(false), 1200);
+    // Fade back in
+    await new Promise(r => setTimeout(r, 300));
+    setContentVisible(true);
+    setTimeout(() => setIsRefreshing(false), 600);
   };
 
   const lastUpdated = useMemo(() => {
@@ -81,7 +90,7 @@ export default function Index() {
               <Activity className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">Cateter Venoso e Sistema de Infusão</h1>
+              <h1 className="text-lg font-bold text-foreground">Auditoria de Cateteres</h1>
               <p className="text-xs text-muted-foreground">Auditoria Interna ( SCIH )</p>
             </div>
           </div>
@@ -104,11 +113,18 @@ export default function Index() {
         </div>
       </header>
 
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <main
+        className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6 transition-all duration-500 ease-in-out"
+        style={{
+          opacity: contentVisible ? 1 : 0,
+          transform: contentVisible ? 'translateY(0)' : 'translateY(12px)',
+          filter: contentVisible ? 'blur(0px)' : 'blur(4px)',
+        }}
+      >
         <DashboardFilters records={records} filters={filters} onChange={setFilters} />
         <KPICards records={filteredRecords} />
-        <AutomaticInsights records={filteredRecords} />
         <DashboardCharts records={filteredRecords} />
+        <DetailedAnalysisCards records={filteredRecords} />
         <AuditTable records={filteredRecords} />
       </main>
     </div>
