@@ -53,7 +53,6 @@ export interface AuditRecord {
 
 function parseDate(dateStr: string): Date | null {
   if (!dateStr) return null;
-  // DD/MM/YYYY format
   const parts = dateStr.split('/');
   if (parts.length === 3) {
     const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
@@ -62,36 +61,53 @@ function parseDate(dateStr: string): Date | null {
   return null;
 }
 
+function normalizeString(value: string | undefined | null, defaultValue: string = 'Não Informado'): string {
+  if (!value) return defaultValue;
+  const trimmed = value.trim();
+  if (trimmed === '') return defaultValue;
+  return trimmed;
+}
+
+function normalizeName(value: string | undefined | null, defaultValue: string = 'Não Informado'): string {
+  if (!value) return defaultValue;
+  const trimmed = value.trim();
+  if (trimmed === '') return defaultValue;
+  
+  const exceptions = ['de', 'da', 'do', 'das', 'dos', 'e'];
+  return trimmed.split(/\s+/).map((word, index) => {
+    const lower = word.toLowerCase();
+    if (index > 0 && exceptions.includes(lower)) return lower;
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  }).join(' ');
+}
+
 function isConform(value: string): boolean | null {
-  if (!value || value.trim() === '' || value === 'Não avaliado') return null;
-  return value.trim().toLowerCase() === 'sim';
+  if (!value) return null;
+  const lower = value.trim().toLowerCase();
+  if (lower === '' || lower === 'não avaliado' || lower === 'nao avaliado') return null;
+  return lower === 'sim';
 }
 
 function parseRow(row: Record<string, string>): AuditRecord {
   const keys = Object.keys(row);
   const conformityItems: { label: string; value: string }[] = [];
 
-  // We need to handle duplicate column names - papaparse adds suffixes like "_1"
-  // First evaluation columns
   for (const field of CONFORMITY_FIELDS_1) {
     const val = row[field];
     if (val !== undefined) {
       conformityItems.push({
         label: CONFORMITY_LABELS[field] || field.trim(),
-        value: val,
+        value: normalizeString(val, 'Não avaliado'),
       });
     }
   }
 
-  // Second evaluation columns (duplicates get _1 suffix from papaparse)
   for (const field of CONFORMITY_FIELDS_1) {
-    const dupeKey = keys.find(k => k === field + '_1') || keys.find(k => k.startsWith(field.trim()) && k !== field && !k.endsWith('_1'));
-    // papaparse handles dupes differently - let's check by index
     const val = row[field + '_1'];
     if (val !== undefined && val.trim() !== '') {
       conformityItems.push({
         label: (CONFORMITY_LABELS[field] || field.trim()) + ' (2ª avaliação)',
-        value: val,
+        value: normalizeString(val, 'Não avaliado'),
       });
     }
   }
@@ -108,26 +124,29 @@ function parseRow(row: Record<string, string>): AuditRecord {
   }
 
   const conformRate = totalEvaluated > 0 ? (totalConform / totalEvaluated) * 100 : 0;
+  
+  const rawSector = normalizeString(row['2. Setor Auditado']);
 
   return {
     timestamp: row['Carimbo de data/hora'] || '',
     date: row['1. Data da auditoria'] || '',
     parsedDate: parseDate(row['1. Data da auditoria'] || ''),
-    sector: (row['2. Setor Auditado'] || '').replace('Unidade de Internação', 'Internação'),
-    shift: row['3. Turno:'] || '',
-    responsible: row['4. Responsável pela unidade'] || '',
-    accessType: row['5. Tipo de acesso'] || '',
-    observations1: row['Observações'] || '',
-    observations2: row['Observações_1'] || '',
-    // New fields - additional columns
-    dressingContents1: row['No curativo consta:'] || '',
-    dressingContents2: row['No curativo consta:_1'] || '',
-    insertionSite1: row['Sitio da Inserção apresenta'] || '',
-    insertionSite2: row['Sitio da Inserção apresenta_1'] || '',
-    catheterCoverage1: row['17.  Cobertura de cateter'] || '',
-    catheterCoverage2: row['17.  Cobertura de cateter_1'] || '',
-    asepsisTechnique1: row['18. Técnica Correta de assepsia '] || '',
-    asepsisTechnique2: row['18. Técnica Correta de assepsia _1'] || '',
+    sector: rawSector.replace('Unidade de Internação', 'Internação'),
+    shift: normalizeString(row['3. Turno:']),
+    responsible: normalizeName(row['4. Responsável pela unidade']),
+    accessType: normalizeString(row['5. Tipo de acesso']),
+    observations1: normalizeString(row['Observações'], 'Sem observações'),
+    observations2: normalizeString(row['Observações_1'], 'Sem observações'),
+    
+    dressingContents1: normalizeString(row['No curativo consta:'], 'Não avaliado'),
+    dressingContents2: normalizeString(row['No curativo consta:_1'], ''),
+    insertionSite1: normalizeString(row['Sitio da Inserção apresenta'], 'Não avaliado'),
+    insertionSite2: normalizeString(row['Sitio da Inserção apresenta_1'], ''),
+    catheterCoverage1: normalizeString(row['17.  Cobertura de cateter'], 'Não avaliado'),
+    catheterCoverage2: normalizeString(row['17.  Cobertura de cateter_1'], ''),
+    asepsisTechnique1: normalizeString(row['18. Técnica Correta de assepsia '], 'Não avaliado'),
+    asepsisTechnique2: normalizeString(row['18. Técnica Correta de assepsia _1'], ''),
+    
     conformityItems,
     conformRate,
     totalEvaluated,
