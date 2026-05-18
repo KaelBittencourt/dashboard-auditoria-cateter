@@ -207,7 +207,12 @@ export default function DashboardCharts({ records }: ChartsProps) {
                 cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 8 }}
                 content={
                   <ChartTooltipContent
-                    className="card-glass border-white/10"
+                    className="w-[220px] card-glass border-white/10"
+                    labelFormatter={(label, payload) => {
+                      if (!payload || !payload.length) return label;
+                      const audits = payload[0].payload.audits;
+                      return `${label} — ${audits} Auditorias`;
+                    }}
                     formatter={(value) => (
                       <div className="flex w-full items-center justify-between gap-4">
                         <span className="text-muted-foreground">Conformidade</span>

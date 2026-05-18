@@ -152,7 +152,7 @@ export async function fetchAuditData(): Promise<AuditRecord[]> {
     skipEmptyLines: true,
   });
 
-  const records = result.data.map(parseRow).filter(r => r.date);
+  const records = result.data.map(parseRow).filter(r => r.date && r.sector && r.sector.trim() !== '');
   cache = { data: records, timestamp: Date.now() };
   return records;
 }
@@ -208,17 +208,19 @@ function formatMonth(key: string): string {
   return `${months[Number(month) - 1]}/${year.slice(2)}`;
 }
 
-export function getConformityBySector(records: AuditRecord[]): { sector: string; rate: number }[] {
-  const grouped: Record<string, { total: number; conform: number }> = {};
+export function getConformityBySector(records: AuditRecord[]): { sector: string; rate: number; audits: number }[] {
+  const grouped: Record<string, { count: number; total: number; conform: number }> = {};
   for (const r of records) {
     if (!r.sector || !r.sector.trim()) continue;
-    if (!grouped[r.sector]) grouped[r.sector] = { total: 0, conform: 0 };
+    if (!grouped[r.sector]) grouped[r.sector] = { count: 0, total: 0, conform: 0 };
+    grouped[r.sector].count += 1;
     grouped[r.sector].total += r.totalEvaluated;
     grouped[r.sector].conform += r.totalConform;
   }
   return Object.entries(grouped).map(([sector, data]) => ({
     sector,
     rate: data.total > 0 ? (data.conform / data.total) * 100 : 0,
+    audits: data.count,
   }));
 }
 
