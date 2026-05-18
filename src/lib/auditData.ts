@@ -182,21 +182,23 @@ export function getNonConformityRanking(records: AuditRecord[]): { label: string
     .sort((a, b) => b.count - a.count);
 }
 
-export function getMonthlyConformity(records: AuditRecord[]): { month: string; rate: number; total: number }[] {
-  const grouped: Record<string, { total: number; conform: number }> = {};
+export function getMonthlyConformity(records: AuditRecord[]): { month: string; rate: number; total: number; totalEvaluated: number }[] {
+  const grouped: Record<string, { count: number; totalEvaluated: number; conform: number }> = {};
   for (const r of records) {
     if (!r.parsedDate) continue;
     const key = `${r.parsedDate.getFullYear()}-${String(r.parsedDate.getMonth() + 1).padStart(2, '0')}`;
-    if (!grouped[key]) grouped[key] = { total: 0, conform: 0 };
-    grouped[key].total += r.totalEvaluated;
+    if (!grouped[key]) grouped[key] = { count: 0, totalEvaluated: 0, conform: 0 };
+    grouped[key].count += 1;
+    grouped[key].totalEvaluated += r.totalEvaluated;
     grouped[key].conform += r.totalConform;
   }
   return Object.entries(grouped)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([month, data]) => ({
       month: formatMonth(month),
-      rate: data.total > 0 ? (data.conform / data.total) * 100 : 0,
-      total: data.total,
+      rate: data.totalEvaluated > 0 ? (data.conform / data.totalEvaluated) * 100 : 0,
+      total: data.count,
+      totalEvaluated: data.totalEvaluated,
     }));
 }
 
@@ -220,18 +222,26 @@ export function getConformityBySector(records: AuditRecord[]): { sector: string;
   }));
 }
 
-export function getConformityByShift(records: AuditRecord[]): { shift: string; conform: number; nonConform: number }[] {
-  const grouped: Record<string, { total: number; conform: number }> = {};
+export function getConformityByShift(records: AuditRecord[]): { shift: string; conformRate: number; nonConformRate: number; conformCount: number; nonConformCount: number; audits: number }[] {
+  const grouped: Record<string, { count: number; total: number; conform: number }> = {};
   for (const r of records) {
-    if (!grouped[r.shift]) grouped[r.shift] = { total: 0, conform: 0 };
-    grouped[r.shift].total += r.totalEvaluated;
-    grouped[r.shift].conform += r.totalConform;
+    const shift = r.shift || 'Não Informado';
+    if (!grouped[shift]) grouped[shift] = { count: 0, total: 0, conform: 0 };
+    grouped[shift].count += 1;
+    grouped[shift].total += r.totalEvaluated;
+    grouped[shift].conform += r.totalConform;
   }
-  return Object.entries(grouped).map(([shift, data]) => ({
-    shift,
-    conform: data.conform,
-    nonConform: data.total - data.conform,
-  }));
+  return Object.entries(grouped).map(([shift, data]) => {
+    const rate = data.total > 0 ? (data.conform / data.total) * 100 : 0;
+    return {
+      shift,
+      conformRate: Number(rate.toFixed(1)),
+      nonConformRate: Number((100 - rate).toFixed(1)),
+      conformCount: data.conform,
+      nonConformCount: data.total - data.conform,
+      audits: data.count,
+    };
+  });
 }
 
 export function getConformityByAccessType(records: AuditRecord[]): { type: string; rate: number }[] {

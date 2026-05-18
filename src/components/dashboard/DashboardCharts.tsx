@@ -90,7 +90,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
               Volume Mensal de Auditorias
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
-              Total de itens avaliados no período
+              Total de auditorias realizadas no período
             </CardDescription>
           </div>
           <div className="flex">
@@ -318,14 +318,32 @@ export default function DashboardCharts({ records }: ChartsProps) {
                 cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 8 }}
                 content={
                   <ChartTooltipContent
-                    className="w-[180px] card-glass border-white/10 gap-2.5"
+                    className="w-[240px] card-glass border-white/10 gap-2.5"
                     indicator="dot"
+                    labelFormatter={(label, payload) => {
+                      if (!payload || !payload.length) return label;
+                      const audits = payload[0].payload.audits;
+                      return `${label} — ${audits} Auditorias Totais`;
+                    }}
+                    formatter={(value, name, props) => {
+                      const isConform = name === 'conformRate' || name === 'Itens Conformes' || name === 'Conforme';
+                      const count = isConform ? props.payload.conformCount : props.payload.nonConformCount;
+                      return (
+                        <div className="flex w-full items-center justify-between gap-2">
+                          <span className="text-muted-foreground">{isConform ? 'Conforme' : 'Não Conforme'}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-muted-foreground">({count} itens)</span>
+                            <span className="font-mono font-bold text-foreground">{`${Number(value).toFixed(1)}%`}</span>
+                          </div>
+                        </div>
+                      );
+                    }}
                   />
                 }
               />
               <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="conform" fill={SEMANTIC.conform} name="Conforme" radius={[4, 4, 0, 0]} barSize={20} animationDuration={1000} />
-              <Bar dataKey="nonConform" fill={SEMANTIC.nonconform} name="Não Conforme" radius={[4, 4, 0, 0]} barSize={20} animationDuration={1000} />
+              <Bar dataKey="conformRate" stackId="a" fill={SEMANTIC.conform} name="Conforme" radius={[0, 0, 4, 4]} barSize={32} animationDuration={1000} />
+              <Bar dataKey="nonConformRate" stackId="a" fill={SEMANTIC.nonconform} name="Não Conforme" radius={[4, 4, 0, 0]} barSize={32} animationDuration={1000} />
             </BarChart>
           </ChartContainer>
         </CardContent>
