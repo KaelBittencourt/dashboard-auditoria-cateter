@@ -23,7 +23,7 @@ interface Props {
 /* ─── Mini progress bar ─── */
 function ProgressBar({ value, color }: { value: number; color: string }) {
   return (
-    <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden">
+    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
       <div
         className="h-full rounded-full transition-all duration-700 ease-out"
         style={{ width: `${Math.min(value, 100)}%`, background: color }}
@@ -76,11 +76,11 @@ function DressingContentsCard({ records }: Props) {
       accentColor={PALETTE.primary}
     >
       {/* Completeness ring */}
-      <div className="flex items-center gap-4 mb-4 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+      <div className="flex items-center gap-4 mb-4 p-3 rounded-xl bg-muted/50 border border-border">
         <div className="relative h-16 w-16 flex-shrink-0">
           <svg viewBox="0 0 36 36" className="h-16 w-16 -rotate-90">
             <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+              fill="none" stroke="hsl(var(--border))" strokeWidth="3" />
             <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               fill="none" stroke={PALETTE.primary} strokeWidth="3"
               strokeDasharray={`${completeRate}, 100`}
@@ -164,7 +164,7 @@ function InsertionSiteCard({ records }: Props) {
         {distribution.map((item) => {
           const isHealthy = item.condition.includes('Sem sinais');
           return (
-            <div key={item.condition} className="flex items-center justify-between p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
+            <div key={item.condition} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50 border border-border">
               <div className="flex items-center gap-2 min-w-0">
                 <div className={cn("h-2 w-2 rounded-full flex-shrink-0", isHealthy ? "bg-success" : "bg-danger")} />
                 <span className="text-xs font-medium text-foreground/80 truncate">{item.condition}</span>
@@ -234,7 +234,7 @@ function CatheterCoverageCard({ records }: Props) {
 
       {/* Summary */}
       {total > 0 && (
-        <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
           <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Total de registros</span>
           <span className="text-sm font-bold text-foreground">{total}</span>
         </div>
@@ -291,7 +291,7 @@ function AsepsisTechniqueCard({ records }: Props) {
 
       {/* Stacked bar */}
       {total > 0 && (
-        <div className="mt-4 pt-3 border-t border-white/5">
+        <div className="mt-4 pt-3 border-t border-border">
           <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-2">Distribuição Visual</p>
           <div className="h-4 w-full rounded-full overflow-hidden flex">
             {distribution.map((item) => {
@@ -325,7 +325,7 @@ function ResponsibleCard({ records }: Props) {
       accentColor={PALETTE.teal}
     >
       {/* Header */}
-      <div className="flex items-center text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60 pb-2 mb-1 border-b border-white/5">
+      <div className="flex items-center text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60 pb-2 mb-1 border-b border-border/50">
         <span className="w-6">#</span>
         <span className="flex-1">Profissional</span>
         <span className="w-14 text-right">Aud.</span>
@@ -337,7 +337,7 @@ function ResponsibleCard({ records }: Props) {
         {data.map((person, i) => (
           <div
             key={person.name}
-            className="flex items-center py-2.5 px-1 rounded-lg hover:bg-white/[0.03] transition-colors group"
+            className="flex items-center py-2.5 px-1 rounded-lg hover:bg-muted/50 transition-colors group"
           >
             {/* Rank */}
             <span className="w-6 text-[11px] font-bold text-muted-foreground/40 tabular-nums">
@@ -347,7 +347,7 @@ function ResponsibleCard({ records }: Props) {
             {/* Name + inline bar */}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-foreground/90 truncate">{person.name}</p>
-              <div className="h-1 w-full rounded-full bg-white/[0.04] mt-1.5 overflow-hidden">
+              <div className="h-1 w-full rounded-full bg-muted mt-1.5 overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{
@@ -406,7 +406,7 @@ function AccessTypeCard({ records }: Props) {
       <div className="flex items-center gap-4 mb-4">
         <div className="relative h-20 w-20 flex-shrink-0">
           <svg viewBox="0 0 36 36" className="h-20 w-20 -rotate-90">
-            <circle cx="18" cy="18" r="15.9155" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="3.5" />
+            <circle cx="18" cy="18" r="15.9155" fill="none" stroke="hsl(var(--border))" strokeWidth="3.5" />
             {distribution.reduce((acc, item, i) => {
               const offset = acc.offset;
               acc.elements.push(

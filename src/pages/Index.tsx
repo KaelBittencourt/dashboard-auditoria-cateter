@@ -8,10 +8,16 @@ import DetailedAnalysisCards from '@/components/dashboard/DetailedAnalysisCards'
 import AuditTable from '@/components/dashboard/AuditTable';
 import { Activity, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ThemeToggle';
+
+const MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
 
 const initialFilters: FilterState = {
-  dateFrom: undefined,
-  dateTo: undefined,
+  months: [],
+  years: [],
   sectors: [],
   shifts: [],
   accessTypes: [],
@@ -32,14 +38,10 @@ export default function Index() {
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
-    // Fade out
     setContentVisible(false);
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Wait for fade out animation
     await new Promise(r => setTimeout(r, 400));
     await refetch();
-    // Fade back in
     await new Promise(r => setTimeout(r, 300));
     setContentVisible(true);
     setTimeout(() => setIsRefreshing(false), 600);
@@ -56,11 +58,15 @@ export default function Index() {
 
   const filteredRecords = useMemo(() => {
     return records.filter(r => {
-      if (filters.dateFrom && r.parsedDate && r.parsedDate < filters.dateFrom) return false;
-      if (filters.dateTo && r.parsedDate) {
-        const endOfDay = new Date(filters.dateTo);
-        endOfDay.setHours(23, 59, 59, 999);
-        if (r.parsedDate > endOfDay) return false;
+      // Month filter
+      if (filters.months.length > 0 && r.parsedDate) {
+        const recordMonth = MONTH_NAMES[r.parsedDate.getMonth()];
+        if (!filters.months.includes(recordMonth)) return false;
+      }
+      // Year filter
+      if (filters.years.length > 0 && r.parsedDate) {
+        const recordYear = String(r.parsedDate.getFullYear());
+        if (!filters.years.includes(recordYear)) return false;
       }
       if (filters.sectors.length > 0 && !filters.sectors.includes(r.sector)) return false;
       if (filters.shifts.length > 0 && !filters.shifts.includes(r.shift)) return false;
@@ -94,11 +100,12 @@ export default function Index() {
               <p className="text-xs text-muted-foreground">Auditoria Interna ( SCIH )</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-wider">Última Sincronização</span>
               <span className="text-xs font-medium text-muted-foreground">{lastUpdated}</span>
             </div>
+            <ThemeToggle />
             <Button 
               variant="secondary" 
               size="sm" 

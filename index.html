@@ -11,6 +11,13 @@
     <meta property="og:description" content="Dashboard de Auditoria Hospitalar e Controle de Infusão" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      // Prevent FOUC: apply theme before first paint
+      (function() {
+        var t = localStorage.getItem('dashboard-theme');
+        if (t === 'dark') document.documentElement.classList.add('dark');
+      })();
+    </script>
   </head>
 
   <body>

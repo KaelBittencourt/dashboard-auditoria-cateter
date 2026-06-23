@@ -22,7 +22,7 @@ function InsightItem({ title, description, icon, type }: InsightItemProps) {
 
   return (
     <div className={`p-4 rounded-xl border flex items-start gap-3 transition-all hover:scale-[1.02] duration-300 ${bgStyles[type]}`}>
-      <div className="mt-0.5 p-2 rounded-lg bg-white/5 border border-current/10">
+      <div className="mt-0.5 p-2 rounded-lg bg-muted/50 border border-current/10">
         {icon}
       </div>
       <div>

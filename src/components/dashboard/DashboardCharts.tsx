@@ -84,7 +84,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Volume mensal - Area Chart */}
       <Card className="lg:col-span-2 card-glass border-none overflow-hidden animate-fade-in shadow-lg">
-        <CardHeader className="flex flex-col items-stretch space-y-0 border-b border-white/5 p-0 sm:flex-row">
+        <CardHeader className="flex flex-col items-stretch space-y-0 border-b border-border/50 p-0 sm:flex-row">
           <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
             <CardTitle className="text-sm font-bold text-foreground/80 uppercase tracking-widest">
               Volume Mensal de Auditorias
@@ -94,7 +94,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
             </CardDescription>
           </div>
           <div className="flex">
-            <div className="relative z-30 flex flex-1 flex-col justify-center gap-1 px-6 py-4 text-left sm:border-l sm:border-white/5 sm:px-8 sm:py-6 bg-primary/5">
+            <div className="relative z-30 flex flex-1 flex-col justify-center gap-1 px-6 py-4 text-left sm:border-l sm:border-border/50 sm:px-8 sm:py-6 bg-primary/5">
               <span className="text-[10px] uppercase font-semibold tracking-tighter text-muted-foreground">
                 Volume total
               </span>
@@ -122,7 +122,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
                   <stop offset="95%" stopColor="var(--color-total)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
               <XAxis
                 dataKey="month"
                 tickLine={false}
@@ -140,7 +140,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
                 cursor={{ stroke: 'var(--color-total)', strokeWidth: 1, strokeDasharray: '4 4' }}
                 content={
                   <ChartTooltipContent
-                    className="w-[180px] card-glass border-white/10"
+                    className="w-[180px] card-glass border-border"
                     labelFormatter={(value) => `Mês: ${value}`}
                     formatter={(value) => (
                       <div className="flex w-full items-center justify-between gap-2">
@@ -192,7 +192,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
                 right: 40,
               }}
             >
-              <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
               <YAxis
                 dataKey="sector"
                 type="category"
@@ -204,10 +204,10 @@ export default function DashboardCharts({ records }: ChartsProps) {
               />
               <XAxis type="number" domain={[0, 100]} hide />
               <ChartTooltip
-                cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 8 }}
+                cursor={{ fill: 'hsl(var(--overlay-subtle) / 0.05)', radius: 8 }}
                 content={
                   <ChartTooltipContent
-                    className="w-[220px] card-glass border-white/10"
+                    className="w-[220px] card-glass border-border"
                     labelFormatter={(label, payload) => {
                       if (!payload || !payload.length) return label;
                       const audits = payload[0].payload.audits;
@@ -254,7 +254,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
         </CardHeader>
         <CardContent>
           {/* Header */}
-          <div className="flex items-center text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60 pb-2 mb-1 border-b border-white/5">
+          <div className="flex items-center text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60 pb-2 mb-1 border-b border-border/50">
             <span className="w-6">#</span>
             <span className="flex-1">Item</span>
             <span className="w-20 text-right">Ocorrências</span>
@@ -268,7 +268,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
               return (
                 <div
                   key={item.label}
-                  className="flex items-center py-2.5 px-1 rounded-lg hover:bg-white/[0.03] transition-colors"
+                  className="flex items-center py-2.5 px-1 rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   {/* Rank */}
                   <span className="w-6 text-[11px] font-bold text-muted-foreground/40 tabular-nums">
@@ -278,7 +278,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
                   {/* Label + inline bar */}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-foreground/90 truncate">{item.label}</p>
-                    <div className="h-1 w-full rounded-full bg-white/[0.04] mt-1.5 overflow-hidden">
+                    <div className="h-1 w-full rounded-full bg-muted mt-1.5 overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{
@@ -316,14 +316,14 @@ export default function DashboardCharts({ records }: ChartsProps) {
         <CardContent>
           <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
             <BarChart data={shiftData} margin={{ top: 10, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" vertical={false} />
               <XAxis dataKey="shift" tick={axisStyle} axisLine={false} tickLine={false} dy={10} />
               <YAxis tick={axisStyle} axisLine={false} tickLine={false} />
               <ChartTooltip
-                cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 8 }}
+                cursor={{ fill: 'hsl(var(--overlay-subtle) / 0.05)', radius: 8 }}
                 content={
                   <ChartTooltipContent
-                    className="w-[240px] card-glass border-white/10 gap-2.5"
+                    className="w-[240px] card-glass border-border gap-2.5"
                     indicator="dot"
                     labelFormatter={(label, payload) => {
                       if (!payload || !payload.length) return label;
@@ -378,7 +378,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
                 cursor={false}
                 content={
                   <ChartTooltipContent
-                    className="card-glass border-white/10"
+                    className="card-glass border-border"
                     formatter={(value) => (
                       <div className="flex w-full items-center justify-between gap-4">
                         <span className="text-muted-foreground">Conformidade</span>
@@ -388,7 +388,7 @@ export default function DashboardCharts({ records }: ChartsProps) {
                   />
                 }
               />
-              <PolarGrid stroke="rgba(255,255,255,0.05)" />
+              <PolarGrid stroke="hsl(var(--border) / 0.5)" />
               <PolarAngleAxis
                 dataKey="type"
                 tick={{ fill: 'hsl(var(--foreground))', fontSize: 10, opacity: 0.7 }}

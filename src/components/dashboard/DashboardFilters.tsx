@@ -1,17 +1,13 @@
 import { AuditRecord, getUniqueValues } from '@/lib/auditData';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Input } from '@/components/ui/input';
-import { CalendarIcon, SlidersHorizontal, X, ChevronDown, Check } from 'lucide-react';
-import { format, isValid, parse } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { SlidersHorizontal, X, ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface FilterState {
-  dateFrom: Date | undefined;
-  dateTo: Date | undefined;
+  months: string[];
+  years: string[];
   sectors: string[];
   shifts: string[];
   accessTypes: string[];
@@ -23,6 +19,11 @@ interface FiltersProps {
   filters: FilterState;
   onChange: (filters: FilterState) => void;
 }
+
+const MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
 
 function MultiSelect({ label, options, selected, onToggle }: {
   label: string;
@@ -38,14 +39,14 @@ function MultiSelect({ label, options, selected, onToggle }: {
           "h-9 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all duration-200 border whitespace-nowrap",
           hasSelection
             ? "bg-primary/15 border-primary/30 text-primary hover:bg-primary/20"
-            : "bg-white/[0.03] border-white/10 text-muted-foreground hover:bg-white/[0.06] hover:text-foreground hover:border-white/20"
+            : "bg-muted/50 border-border text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border"
         )}>
-          {hasSelection && <span className="h-4 w-4 rounded-full bg-primary text-[9px] font-black flex items-center justify-center text-white">{selected.length}</span>}
+          {hasSelection && <span className="h-4 w-4 rounded-full bg-primary text-[9px] font-black flex items-center justify-center text-primary-foreground">{selected.length}</span>}
           {label}
           <ChevronDown className="h-3 w-3 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-52 p-1.5 pointer-events-auto bg-card/95 backdrop-blur-xl border-white/10 shadow-2xl" align="start">
+      <PopoverContent className="w-52 p-1.5 pointer-events-auto bg-card/95 backdrop-blur-xl border-border shadow-2xl" align="start">
         <div className="space-y-0.5 max-h-52 overflow-y-auto">
           {options.map(opt => {
             const isSelected = selected.includes(opt);
@@ -57,12 +58,12 @@ function MultiSelect({ label, options, selected, onToggle }: {
                   "w-full text-left px-2.5 py-2 rounded-md text-xs font-medium transition-all flex items-center gap-2",
                   isSelected
                     ? "bg-primary/15 text-primary"
-                    : "text-foreground/80 hover:bg-white/5 hover:text-foreground"
+                    : "text-foreground/80 hover:bg-muted/50 hover:text-foreground"
                 )}
               >
                 <div className={cn(
                   "h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-all",
-                  isSelected ? "bg-primary border-primary" : "border-white/20"
+                  isSelected ? "bg-primary border-primary" : "border-border"
                 )}>
                   {isSelected && <Check className="h-2.5 w-2.5 text-white" />}
                 </div>
@@ -82,16 +83,23 @@ export default function DashboardFilters({ records, filters, onChange }: Filters
   const accessTypes = useMemo(() => getUniqueValues(records, 'accessType'), [records]);
   const responsibles = useMemo(() => getUniqueValues(records, 'responsible'), [records]);
 
-  const [fromInput, setFromInput] = useState(filters.dateFrom ? format(filters.dateFrom, 'dd/MM/yyyy') : '');
-  const [toInput, setToInput] = useState(filters.dateTo ? format(filters.dateTo, 'dd/MM/yyyy') : '');
+  const availableMonths = useMemo(() => {
+    const monthSet = new Set<number>();
+    for (const r of records) {
+      if (r.parsedDate) monthSet.add(r.parsedDate.getMonth());
+    }
+    return Array.from(monthSet)
+      .sort((a, b) => a - b)
+      .map(m => MONTH_NAMES[m]);
+  }, [records]);
 
-  useEffect(() => {
-    setFromInput(filters.dateFrom ? format(filters.dateFrom, 'dd/MM/yyyy') : '');
-  }, [filters.dateFrom]);
-
-  useEffect(() => {
-    setToInput(filters.dateTo ? format(filters.dateTo, 'dd/MM/yyyy') : '');
-  }, [filters.dateTo]);
+  const availableYears = useMemo(() => {
+    const yearSet = new Set<string>();
+    for (const r of records) {
+      if (r.parsedDate) yearSet.add(String(r.parsedDate.getFullYear()));
+    }
+    return Array.from(yearSet).sort();
+  }, [records]);
 
   const toggleItem = (field: keyof FilterState, value: string) => {
     const arr = filters[field] as string[];
@@ -99,36 +107,14 @@ export default function DashboardFilters({ records, filters, onChange }: Filters
     onChange({ ...filters, [field]: newArr });
   };
 
-  const maskDate = (val: string) => {
-    const clean = val.replace(/\D/g, '');
-    if (clean.length <= 2) return clean;
-    if (clean.length <= 4) return `${clean.slice(0, 2)}/${clean.slice(2)}`;
-    return `${clean.slice(0, 2)}/${clean.slice(2, 4)}/${clean.slice(4, 8)}`;
-  };
-
-  const handleDateInput = (val: string, type: 'from' | 'to') => {
-    const masked = maskDate(val);
-    if (type === 'from') setFromInput(masked);
-    else setToInput(masked);
-
-    if (masked.length === 10) {
-      const parsed = parse(masked, 'dd/MM/yyyy', new Date());
-      if (isValid(parsed)) {
-        onChange({ ...filters, [type === 'from' ? 'dateFrom' : 'dateTo']: parsed });
-      }
-    } else if (masked === '') {
-      onChange({ ...filters, [type === 'from' ? 'dateFrom' : 'dateTo']: undefined });
-    }
-  };
-
   const activeCount = [
-    filters.dateFrom, filters.dateTo,
+    filters.months.length > 0, filters.years.length > 0,
     filters.sectors.length > 0, filters.shifts.length > 0,
     filters.accessTypes.length > 0, filters.responsibles.length > 0,
   ].filter(Boolean).length;
 
   const clearFilters = () => onChange({
-    dateFrom: undefined, dateTo: undefined,
+    months: [], years: [],
     sectors: [], shifts: [], accessTypes: [], responsibles: [],
   });
 
@@ -144,61 +130,16 @@ export default function DashboardFilters({ records, filters, onChange }: Filters
         </div>
 
         {/* Divider */}
-        <div className="h-6 w-px bg-white/10 hidden sm:block" />
+        <div className="h-6 w-px bg-border hidden sm:block" />
 
-        {/* Date range */}
-        <div className="flex items-center gap-1.5">
-          <Popover>
-            <PopoverTrigger asChild>
-              <div className="relative group cursor-pointer">
-                <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
-                <Input
-                  placeholder="Início"
-                  value={fromInput}
-                  onChange={(e) => handleDateInput(e.target.value, 'from')}
-                  className="h-9 w-[120px] pl-7 text-xs bg-white/[0.03] border-white/10 focus-visible:ring-primary/20 focus-visible:border-primary/30 transition-all cursor-text placeholder:text-muted-foreground/50"
-                />
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 pointer-events-auto bg-card/95 backdrop-blur-xl border-white/10 shadow-2xl" align="start">
-              <Calendar
-                mode="single"
-                selected={filters.dateFrom}
-                onSelect={d => onChange({ ...filters, dateFrom: d })}
-                className="p-3 pointer-events-auto"
-                locale={ptBR}
-              />
-            </PopoverContent>
-          </Popover>
-
-          <span className="text-[10px] text-muted-foreground/50 font-medium">até</span>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <div className="relative group cursor-pointer">
-                <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
-                <Input
-                  placeholder="Término"
-                  value={toInput}
-                  onChange={(e) => handleDateInput(e.target.value, 'to')}
-                  className="h-9 w-[120px] pl-7 text-xs bg-white/[0.03] border-white/10 focus-visible:ring-primary/20 focus-visible:border-primary/30 transition-all cursor-text placeholder:text-muted-foreground/50"
-                />
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 pointer-events-auto bg-card/95 backdrop-blur-xl border-white/10 shadow-2xl" align="start">
-              <Calendar
-                mode="single"
-                selected={filters.dateTo}
-                onSelect={d => onChange({ ...filters, dateTo: d })}
-                className="p-3 pointer-events-auto"
-                locale={ptBR}
-              />
-            </PopoverContent>
-          </Popover>
+        {/* Month + Year selectors */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <MultiSelect label="Mês" options={availableMonths} selected={filters.months} onToggle={v => toggleItem('months', v)} />
+          <MultiSelect label="Ano" options={availableYears} selected={filters.years} onToggle={v => toggleItem('years', v)} />
         </div>
 
         {/* Divider */}
-        <div className="h-6 w-px bg-white/10 hidden sm:block" />
+        <div className="h-6 w-px bg-border hidden sm:block" />
 
         {/* Multi-selects */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -211,7 +152,7 @@ export default function DashboardFilters({ records, filters, onChange }: Filters
         {/* Clear button */}
         {activeCount > 0 && (
           <>
-            <div className="h-6 w-px bg-white/10 hidden sm:block" />
+            <div className="h-6 w-px bg-border hidden sm:block" />
             <Button
               variant="ghost"
               size="sm"
